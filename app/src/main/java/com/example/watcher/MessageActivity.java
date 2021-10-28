@@ -79,6 +79,7 @@ import pl.droidsonroids.gif.GifImageView;
 
 public class MessageActivity extends AppCompatActivity {
 
+    public static final String FRIEND_NAME = "friendName";
     private String messageReceiverID, messageSenderID,messageReceiverImage;
 
     private GifImageView b;
@@ -97,6 +98,7 @@ public class MessageActivity extends AppCompatActivity {
     private double latitude,longitude;
     private double sendLatitude,sendLongitude;
     private String username,check_url;
+    private String friendName;
 
 
     @Override
@@ -108,6 +110,7 @@ public class MessageActivity extends AppCompatActivity {
         RootRef = FirebaseDatabase.getInstance().getReference();
         locationRef = FirebaseDatabase.getInstance().getReference();
         messageReceiverID = getIntent().getExtras().get("visit_user_id").toString();
+        friendName = getIntent().getExtras().get("visit_user_name").toString();
         Log.d("receiveridin message",messageReceiverID);
         messageReceiverImage = getIntent().getExtras().get("visit_image").toString();
         check_url="https://us-central1-watcher24-7.cloudfunctions.net/notifier";
@@ -170,6 +173,7 @@ public class MessageActivity extends AppCompatActivity {
 
                             Intent intent = new Intent(MessageActivity.this, LocationMapActivity.class);
                             intent.putExtra("latlang", mapsLatLng);
+                            intent.putExtra(FRIEND_NAME, friendName);
                             startActivity(intent);
                         }else{
                             Toast.makeText(MessageActivity.this,"location can not be found",Toast.LENGTH_SHORT).show();
