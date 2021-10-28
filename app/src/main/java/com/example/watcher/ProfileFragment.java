@@ -31,7 +31,7 @@ public class ProfileFragment extends Fragment {
     private View view;
     private Button button;
     FirebaseAuth mAuth;
-    private Button startButton;
+    private Button startButton, mapBtn;
     private CircleImageView circleImageView;
     private TextView textView1,textView2,textView3,textView4,textView5;
     private DatabaseReference RootRef;
@@ -68,6 +68,7 @@ public class ProfileFragment extends Fragment {
         textView4=view.findViewById(R.id.address_profile_fragment);
         textView5=view.findViewById(R.id.blood_group_profile_fragment);
         startButton=view.findViewById(R.id.startBackgroundService);
+        mapBtn = view.findViewById(R.id.map);
 
         retrieveUserInfo();
 
@@ -98,6 +99,11 @@ public class ProfileFragment extends Fragment {
 
             }
         });
+
+        mapBtn.setOnClickListener(v -> {
+            startActivity(new Intent(getContext(), LocationMapActivity.class));
+        });
+
         return view;
     }
     private void stopEmergencyService() {

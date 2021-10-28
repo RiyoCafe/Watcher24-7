@@ -5,16 +5,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.watcher.api.GoogleMapsApi;
 import com.example.watcher.api.NearbyPlacesApiResponse;
+import com.example.watcher.helper.DeviceLocationFinder;
 import com.example.watcher.helper.MapCustomizer;
 import com.example.watcher.places.NearByPlace;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -44,27 +47,26 @@ public class LocationMapActivity extends AppCompatActivity implements OnMapReady
     private GoogleMap map;
     private CameraPosition cameraPosition;
     private MapCustomizer mapCustomizer;
-    private PlacesClient placesClient;
 
     private FusedLocationProviderClient fusedLocationProviderClient;
     private static final int DEFAULT_ZOOM = 15;
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private boolean locationPermissionGranted;
-    private FloatingActionButton button1,button2;
+    private ImageView button1, button2;
 
     private LatLng latLng;
+
+    private String friendName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_location_map);
-        button1=findViewById(R.id.hospital);
-        button2=findViewById(R.id.policeStation);
+        button1 = findViewById(R.id.hospital);
+        button2 = findViewById(R.id.policeStation);
         latLng = getIntent().getParcelableExtra("latlang");
 
-        Places.initialize(LocationMapActivity.this, "AIzaSyB4VGhB-WTShBVqbgDUxhbIzAWPuY6kBa4");
-
-        placesClient = Places.createClient(this);
+        friendName = getIntent().getExtras().get(MessageActivity.FRIEND_NAME).toString();
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -75,11 +77,8 @@ public class LocationMapActivity extends AppCompatActivity implements OnMapReady
     }
 
     @Override
-    public void onMapReady(GoogleMap map)
-    {
-
+    public void onMapReady(GoogleMap map) {
         this.map = map;
-
         this.map.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
 
             @Override
@@ -88,11 +87,10 @@ public class LocationMapActivity extends AppCompatActivity implements OnMapReady
             }
 
             @Override
-            public View getInfoContents(Marker marker)
-            {
+            public View getInfoContents(Marker marker) {
 
                 View infoWindow = getLayoutInflater().inflate(R.layout.custom_info_contents,
-                        (FrameLayout) findViewById(R.id.map), false);
+                        findViewById(R.id.map), false);
 
                 TextView title = infoWindow.findViewById(R.id.title);
                 title.setText(marker.getTitle());
@@ -104,11 +102,11 @@ public class LocationMapActivity extends AppCompatActivity implements OnMapReady
             }
         });
 
-
         getLocationPermission();
 
         updateLocationUI(map);
-        Log.e("after map ready enteres",latLng.toString());
+        if(latLng!=null)
+            Log.e("after map ready enteres", latLng.toString());
         mapCustomizer = new MapCustomizer(map);
         initListeners();
     }
@@ -127,44 +125,56 @@ public class LocationMapActivity extends AppCompatActivity implements OnMapReady
         });
     }
 
-    private void showNearByHospitals(){
+    private void showNearByHospitals() {
         map.clear();
-
-        makePlacesCall("hospital", latLng);
+        if(latLng!=null)
+            makePlacesCall("hospital", latLng);
+        else{
+            DeviceLocationFinder.getCurrentDeviceLocation(getApplicationContext(),
+                    latLng -> {
+                       makePlacesCall("hospital", latLng);
+                    });
+        }
 
     }
 
-    private void showNearByPoliceStations(){
+    private void showNearByPoliceStations() {
         map.clear();
-
-        makePlacesCall("police", latLng);
+        if(latLng!=null)
+            makePlacesCall("police", latLng);
+        else{
+            DeviceLocationFinder.getCurrentDeviceLocation(getApplicationContext(),
+                    latLng -> {
+                        makePlacesCall("police", latLng);
+                    });
+        }
     }
 
-    private void makePlacesCall(String type, LatLng latLng){
-        String location = latLng.latitude+","+latLng.longitude;
-        Call<NearbyPlacesApiResponse> call =  GoogleMapsApi.instance.placesService
-                .fetchNearByPlaces(location,15000, type, BuildConfig.GOOGLE_MAP_WEB_API_KEY);
+    private void makePlacesCall(String type, LatLng latLng) {
+        String location = latLng.latitude + "," + latLng.longitude;
+        Call<NearbyPlacesApiResponse> call = GoogleMapsApi.instance.placesService
+                .fetchNearByPlaces(location, 15000, type, BuildConfig.GOOGLE_MAP_WEB_API_KEY);
 
         call.enqueue(new Callback<NearbyPlacesApiResponse>() {
             @Override
             public void onResponse(@NonNull Call<NearbyPlacesApiResponse> call, @NonNull Response<NearbyPlacesApiResponse> response) {
-                if(response.isSuccessful()&&response.body()!=null){
-                    Log.d(TAG, "onResponse: "+response.body());
+                if (response.isSuccessful() && response.body() != null) {
+                    Log.d(TAG, "onResponse: " + response.body());
                     showNearByPlaces(response.body().getResults());
-                }else{
-                    Log.e(TAG, "onResponse: "+type+" fetching is not successful");
+                } else {
+                    Log.e(TAG, "onResponse: " + type + " fetching is not successful");
                 }
             }
 
             @Override
-            public void onFailure(@NonNull Call<NearbyPlacesApiResponse> call,@NonNull Throwable t) {
-                Log.e(TAG, "onFailure: error fetching "+type, t);
+            public void onFailure(@NonNull Call<NearbyPlacesApiResponse> call, @NonNull Throwable t) {
+                Log.e(TAG, "onFailure: error fetching " + type, t);
             }
         });
     }
 
-    public void showNearByPlaces(List<NearByPlace> nearByPlaceList){
-        if(nearByPlaceList.size() ==0)
+    public void showNearByPlaces(List<NearByPlace> nearByPlaceList) {
+        if (nearByPlaceList.size() == 0)
             Toast.makeText(this, "No nearby locations", Toast.LENGTH_SHORT).show();
         List<LatLng> latLngList = new ArrayList<>();
         for (NearByPlace nearbyPlace : nearByPlaceList) {
@@ -178,11 +188,9 @@ public class LocationMapActivity extends AppCompatActivity implements OnMapReady
     private void getLocationPermission() {
 
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
-        {
+                android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationPermissionGranted = true;
-        }
-        else {
+        } else {
             ActivityCompat.requestPermissions(this,
                     new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
         }
@@ -204,17 +212,32 @@ public class LocationMapActivity extends AppCompatActivity implements OnMapReady
         updateLocationUI(map);
     }
 
-    private void updateLocationUI(GoogleMap map)
-    {
+    @SuppressLint("MissingPermission")
+    private void updateLocationUI(GoogleMap map) {
+        DeviceLocationFinder.getCurrentDeviceLocation(getApplicationContext(),
+                latLng -> {
+                    map.addMarker(new MarkerOptions()
+                            .position(latLng)
+                            .title("My location"));
+                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 10));
+                    map.setMyLocationEnabled(true);
+                    map.getUiSettings().setMyLocationButtonEnabled(true);
+                });
 
-        map.addMarker(new MarkerOptions()
-                .position(latLng)
-                .title("Location is here"));
+        if (latLng != null) {
+            map.addMarker(new MarkerOptions()
+                    .position(latLng)
+                    .title(friendName+" is here."));
 
-        map.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+            map.addMarker(new MarkerOptions()
+                    .position(latLng)
+                    .title("Location is here"));
 
-        map.animateCamera(CameraUpdateFactory.zoomIn());
+            map.moveCamera(CameraUpdateFactory.newLatLng(latLng));
 
-        map.animateCamera(CameraUpdateFactory.zoomTo(DEFAULT_ZOOM), 2000, null);
+            map.animateCamera(CameraUpdateFactory.zoomIn());
+
+            map.animateCamera(CameraUpdateFactory.zoomTo(DEFAULT_ZOOM), 2000, null);
+        }
     }
 }
