@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Watcher</string>
+    <string name="title_activity_home_page">HomePage</string>
+    <string name="tab_text_1">Tab 1</string>
+    <string name="tab_text_2">Tab 2</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_final_home_page">FinalHomePageActivity</string>
+    <string name="title_activity_final_home2">FinalHomeActivity2</string>
+    <string name="chats">Chats</string>
+    <string name="Chats" />
+    <string name="Profile">Profile</string>
+    <string name="Contacts">Contacts</string>
+    <string name="Requests" />
+
+    <string name="requests">Requests</string>
+    <string name="sos">SOS</string>
+    <string name="pending_requests">Pending Requests</string>
+    <string name="send_requests">Send Requests</string>
+    <string name="input">Input</string>
+</resources>
