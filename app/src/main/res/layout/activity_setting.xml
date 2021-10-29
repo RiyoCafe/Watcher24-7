@@ -96,8 +96,8 @@
 
     <Button
         android:id="@+id/save_profile_editing_setting"
-        android:layout_width="111dp"
-        android:layout_height="56dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_below="@+id/blood_group_profile_setting"
         android:layout_alignParentStart="true"
         android:layout_alignParentEnd="true"

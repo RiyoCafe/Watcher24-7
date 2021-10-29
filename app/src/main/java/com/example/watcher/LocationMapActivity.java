@@ -3,6 +3,7 @@ package com.example.watcher;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 
 import android.annotation.SuppressLint;
@@ -20,12 +21,14 @@ import com.example.watcher.api.NearbyPlacesApiResponse;
 import com.example.watcher.helper.DeviceLocationFinder;
 import com.example.watcher.helper.MapCustomizer;
 import com.example.watcher.places.NearByPlace;
+import com.example.watcher.util.MapUtils;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -65,8 +68,12 @@ public class LocationMapActivity extends AppCompatActivity implements OnMapReady
         button1 = findViewById(R.id.hospital);
         button2 = findViewById(R.id.policeStation);
         latLng = getIntent().getParcelableExtra("latlang");
+        if(getIntent().hasExtra(MessageActivity.FRIEND_NAME))
+        {
+            friendName = getIntent().getExtras().get(MessageActivity.FRIEND_NAME).toString();
+        }
 
-        friendName = getIntent().getExtras().get(MessageActivity.FRIEND_NAME).toString();
+
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -174,14 +181,53 @@ public class LocationMapActivity extends AppCompatActivity implements OnMapReady
     }
 
     public void showNearByPlaces(List<NearByPlace> nearByPlaceList) {
-        if (nearByPlaceList.size() == 0)
+        if (nearByPlaceList.size() == 0){
             Toast.makeText(this, "No nearby locations", Toast.LENGTH_SHORT).show();
-        List<LatLng> latLngList = new ArrayList<>();
-        for (NearByPlace nearbyPlace : nearByPlaceList) {
-            LatLng latLng = nearbyPlace.getGeometry().getLocation().getLatLng();
-            latLngList.add(latLng);
-            mapCustomizer.addMarker(latLng, nearbyPlace.getName());
+            return;
         }
+        //Toast.makeText(getApplicationContext(), "Total places "+nearByPlaceList.size(), Toast.LENGTH_SHORT).show();
+
+        List<LatLng> latLngList = new ArrayList<>();
+
+        if(latLng!=null){
+            Marker caress=  map.addMarker(new MarkerOptions()
+                    .position(latLng)
+                    .title(friendName+"\'s location")
+                    );
+            caress.showInfoWindow();
+            caress.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW));
+
+            NearByPlace minNearByPlace = nearByPlaceList.get(0);
+            Marker minMarker = mapCustomizer.addMarker(latLng, minNearByPlace.getName());
+            double minDist = MapUtils.distance(latLng, minNearByPlace.getGeometry().getLocation().getLatLng());
+            for (int i = 1; i <nearByPlaceList.size() ; i++) {
+                NearByPlace nearByPlace = nearByPlaceList.get(i);
+                LatLng latLng = nearByPlace.getGeometry().getLocation().getLatLng();
+                Marker marker = mapCustomizer.addMarker(latLng, nearByPlace.getName());
+
+                double dist = MapUtils.distance(this.latLng, latLng);
+                if( dist<minDist){
+                    minDist = dist;
+                    minNearByPlace = nearByPlace;
+                    minMarker = marker;
+                }
+
+                latLngList.add(latLng);
+            }
+            minMarker.remove();
+            minMarker = mapCustomizer.addMarker(minNearByPlace.getGeometry().getLocation().getLatLng(), "Nearest: "+minNearByPlace.getName());
+            //https://stackoverflow.com/questions/14579426/google-android-maps-api-v2-show-marker-title-always
+            // minMarker.showInfoWindow();
+            minMarker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
+
+        }else{
+            for (NearByPlace nearbyPlace : nearByPlaceList) {
+                LatLng latLng = nearbyPlace.getGeometry().getLocation().getLatLng();
+                latLngList.add(latLng);
+                mapCustomizer.addMarker(latLng, nearbyPlace.getName());
+            }
+        }
+
         mapCustomizer.animateCameraWithBounds(latLngList);
     }
 
@@ -230,8 +276,12 @@ public class LocationMapActivity extends AppCompatActivity implements OnMapReady
                     .title(friendName+" is here."));
 
             map.addMarker(new MarkerOptions()
-                    .position(latLng)
-                    .title("Location is here"));
+                    .position(new LatLng(22.331425517978158,91.83202661536698))
+                    .title("Nearby hospital is here"));
+
+            map.addMarker(new MarkerOptions()
+                    .position(new LatLng(22.33378354957992,91.83704481292261))
+                    .title("Nearby police station  is here"));
 
             map.moveCamera(CameraUpdateFactory.newLatLng(latLng));
 
@@ -239,5 +289,6 @@ public class LocationMapActivity extends AppCompatActivity implements OnMapReady
 
             map.animateCamera(CameraUpdateFactory.zoomTo(DEFAULT_ZOOM), 2000, null);
         }
+
     }
 }

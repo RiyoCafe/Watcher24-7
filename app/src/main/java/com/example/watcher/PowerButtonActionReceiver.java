@@ -41,7 +41,7 @@ public class PowerButtonActionReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         long currentTimestamp = System.currentTimeMillis();
         Log.d(TAG, "onReceive: " + (currentTimestamp - lastClickedTimestamp));
-        int interval = 700;
+        int interval = 800;
         if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
             if (currentTimestamp - lastClickedTimestamp <= interval)
                 clickCnt++;
@@ -85,10 +85,11 @@ public class PowerButtonActionReceiver extends BroadcastReceiver {
 
                             json.addProperty("topic", messageSenderID);
                             json.addProperty("title", "Help " + uname + " immediately !!!");
-                            StringBuilder messageBuilder = new StringBuilder("Hey. I am in danger.");
-                            messageBuilder.append("\n").append("Find me here...").append("\n")
+                            String link = "https://www.google.com/maps/@?api=1&map_action=map&center="+latLng.latitude+"%2C"+latLng.longitude+"&zoom="+19;
+                            StringBuilder messageBuilder = new StringBuilder("Hey. "+uname+" is in danger.");
+                            messageBuilder.append("\n").append("Find her here...").append("\n")
                                     .append("Latitude: ").append(latLng.latitude).append(", ")
-                                    .append("Longtitude: ").append(latLng.longitude);
+                                    .append("Longtitude: ").append(latLng.longitude).append("\n").append(link);
                             json.addProperty("message", messageBuilder.toString());
 
                             NotificationService service = Watcher24Api.instance.notificationService;
